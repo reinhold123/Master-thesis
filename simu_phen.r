@@ -1,6 +1,10 @@
 ###################### R script for simulating additive phenotypes from real genomic data of A. thaliana
 
-simu_phen <- function(X, Y, K, herit=0.5, num_causal_predictors=5, report=TRUE, model="additive"){
+simu_phen <- function(X, Y, K, herit=0.5, num_additive_markers=5, epistatic_order=2, epistatic_variance_explained=0.5, report=TRUE, model="additive"){
+  if(model != "additive" & model != "epistatic"){
+    cat("Mission aborted. Model has to be either additive or epistatic.\n")
+    return(NULL)
+  }
   X <- X
   Y_temp <- Y
   K <- K
@@ -11,7 +15,7 @@ simu_phen <- function(X, Y, K, herit=0.5, num_causal_predictors=5, report=TRUE, 
   rownames(X)<-ecotype
   
   herit <- herit
-  num_causal_predictors <- num_causal_predictors
+  num_causal_predictors <- num_additive_markers
   veb <- herit/num_causal_predictors
   effective_markers <- sample(ncol(X), size = num_causal_predictors)
   count <- 0
@@ -33,20 +37,32 @@ simu_phen <- function(X, Y, K, herit=0.5, num_causal_predictors=5, report=TRUE, 
   
   if(model == "additive"){
     phenotype_value <- prel_phenotype_value
-    Y <- data.frame(ecotype, phenotype_value)
-    if(report == TRUE){
-      cat("Brace yourself, results are coming...\n")
-      h2test <- amm_gwas(Y, X, K, run=FALSE, report=FALSE)
-      cat("Set heritability is", herit, "\t estimated heritability is", h2test[1], "\n")
-    }
-    return(Y)
   }
   if(model == "epistatic"){
-    cat("I haven't programmed this path yet.")
-    return(NULL)
+    add_phenotype_value <- prel_phenotype_value
+    num_markers <- epistatic_order
+    epistatic_variance_explained <- epistatic_variance_explained
+    epistatic_markers <- sample(ncol(X), size=num_markers)
+    
+    epistatic_value <- rep(0, length(rownames(X)))
+    for (i in epistatic_markers){
+      beta <- sqrt((veb*var(na.omit(add_phenotype_value))) / ((var(X[,i])) - (veb * var(X[,i]))))
+      for (j in 1:length(epistatic_value)){
+        if(X[j,i] == 1){
+          epistatic_value[j] <- beta
+        }
+        else{
+          epistatic_value[j] <- 0
+        }
+      }
+    }
+    phenotype_value <- (1-epistatic_variance_explained)*add_phenotype_value + epistatic_value
   }
-  else{
-    cat("Model has to be either additive or epistatic.")
-    return(NULL)
+  Y <- data.frame(ecotype, phenotype_value)
+  if(report == TRUE){
+    cat("Brace yourself, results are coming...\n")
+    h2test <- amm_gwas(Y, X, K, run=FALSE, report=FALSE)
+    cat("Set heritability was", herit, "\t estimated heritability is", h2test[1], "\n")
   }
+  return(Y)
 }
