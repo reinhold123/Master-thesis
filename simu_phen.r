@@ -56,7 +56,7 @@ simu_phen <- function(X, Y, K, herit=0.5, num_additive_markers=5, epistatic_orde
         }
       }
     }
-    phenotype_value <- (1-epistatic_variance_explained)*add_phenotype_value + epistatic_value
+    phenotype_value <- (1-epistatic_variance_explained)*add_phenotype_value + epistatic_variance_explained*epistatic_value
   }
   Y <- data.frame(ecotype, phenotype_value)
   if(report == TRUE){
