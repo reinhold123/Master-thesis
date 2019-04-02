@@ -21,43 +21,54 @@ simu_phen <- function(X, Y, K, herit=0.5, num_additive_markers=5, epistatic_orde
   count <- 0
   prel_phenotype_value <- latitude_value
   
-  while(count < 3){
-    genomic_value <- rep(0, length(rownames(X)))
-    for (i in effective_markers){
-      beta <- sqrt((veb*var(na.omit(prel_phenotype_value))) / ((var(X[,i])) - (veb * var(X[,i]))))
-      for (j in 1:length(genomic_value)){
-        genomic_value[j] <- genomic_value[j] + beta * X[j,i]}
-    }
-    prel_phenotype_value <- latitude_value * genomic_value
-    
-    noise_value <- var(genomic_value) * (1-herit)/herit
-    prel_phenotype_value <- prel_phenotype_value + rnorm(length(prel_phenotype_value), sd=sqrt(noise_value))
-    count <- count + 1
-  }
-  
   if(model == "additive"){
-    phenotype_value <- prel_phenotype_value
+    while(count < 5){
+      genomic_value <- rep(0, length(rownames(X)))
+      for (i in effective_markers){
+        beta <- sqrt((veb*var(na.omit(prel_phenotype_value))) / ((var(X[,i])) - (veb * var(X[,i]))))
+        for (j in 1:length(genomic_value)){
+          genomic_value[j] <- genomic_value[j] + beta * X[j,i]}
+      }
+      prel_phenotype_value <- latitude_value * genomic_value
+    
+      noise_value <- var(genomic_value) * (1-herit)/herit
+      prel_phenotype_value <- prel_phenotype_value + rnorm(length(prel_phenotype_value), sd=sqrt(noise_value))
+      count <- count + 1
+    }
   }
   if(model == "epistatic"){
-    add_phenotype_value <- prel_phenotype_value
-    num_markers <- epistatic_order
-    epistatic_variance_explained <- epistatic_variance_explained
-    epistatic_markers <- sample(ncol(X), size=num_markers)
+    while(count < 5){
+      genomic_value <- rep(0, length(rownames(X)))
+      for (i in effective_markers){
+        beta <- sqrt((veb*var(na.omit(prel_phenotype_value))) / ((var(X[,i])) - (veb * var(X[,i]))))
+        for (j in 1:length(genomic_value)){
+          genomic_value[j] <- genomic_value[j] + beta * X[j,i]}
+      }
+      add_phenotype_value <- latitude_value * genomic_value
+      num_markers <- epistatic_order
+      epistatic_variance_explained <- epistatic_variance_explained
+      epistatic_markers <- sample(ncol(X), size=num_markers)
     
-    epistatic_value <- rep(0, length(rownames(X)))
-    for (i in epistatic_markers){
-      beta <- sqrt((veb*var(na.omit(add_phenotype_value))) / ((var(X[,i])) - (veb * var(X[,i]))))
-      for (j in 1:length(epistatic_value)){
-        if(X[j,i] == 1){
-          epistatic_value[j] <- beta
-        }
-        else{
-          epistatic_value[j] <- 0
+      epistatic_value <- rep(0, length(rownames(X)))
+      for (i in epistatic_markers){
+        #beta <- sqrt((veb*var(na.omit(add_phenotype_value))) / ((var(X[,i])) - (veb * var(X[,i]))))
+        for (j in 1:length(epistatic_value)){
+          if(X[j,i] == 1){
+            epistatic_value[j] <- 1
+          }
+          else{
+            epistatic_value[j] <- 0
+          }
         }
       }
+      prel_phenotype_value <- add_phenotype_value + epistatic_variance_explained*epistatic_value
+      noise_value <- var(na.omit(add_phenotype_value)) * (1-herit)/herit
+      prel_phenotype_value <- prel_phenotype_value + rnorm(length(prel_phenotype_value), sd=sqrt(noise_value))
+      count <- count + 1
     }
-    phenotype_value <- (1-epistatic_variance_explained)*add_phenotype_value + epistatic_variance_explained*epistatic_value
   }
+  
+  phenotype_value <- prel_phenotype_value
   Y <- data.frame(ecotype, phenotype_value)
   if(report == TRUE){
     cat("Brace yourself, results are coming...\n")
