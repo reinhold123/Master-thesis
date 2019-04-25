@@ -22,7 +22,7 @@ simu_phen <- function(X, Y, K, herit=0.5, num_additive_markers=5, epistatic_orde
   prel_phenotype_value <- latitude_value
   
   if(model == "additive"){
-    while(count < 5){
+    while(count < 3){
       genomic_value <- rep(0, length(rownames(X)))
       for (i in effective_markers){
         beta <- sqrt((veb*var(na.omit(prel_phenotype_value))) / ((var(X[,i])) - (veb * var(X[,i]))))
