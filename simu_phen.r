@@ -21,7 +21,7 @@ simu_phen <- function(X, Y, K, herit=0.5, num_additive_markers=5, epistatic_orde
   count <- 0
   prel_phenotype_value <- latitude_value
   
-  if(model == "additive"){
+  if(model == "additive" | model == "mixed"){
     while(count < 3){
       genomic_value <- rep(0, length(rownames(X)))
       for (i in effective_markers){
@@ -120,7 +120,10 @@ simu_phen <- function(X, Y, K, herit=0.5, num_additive_markers=5, epistatic_orde
     
     foo <- sample(ncol(andmarkers), size=5)
     bar <- sample(ncol(ormarkers), size=5)
-    prel_phenotype_value <- andmarkers[,foo] + ormarkers[,bar]
+    epistatic_value <- andmarkers[,foo] + ormarkers[,bar]
+    if(model == "epistatic"){
+      prel_phenotype_value <- epistatic_value
+    }
   }
   
   if(model == "mixed"){
