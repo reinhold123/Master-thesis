@@ -38,6 +38,7 @@ simu_phen <- function(X, Y, K, herit=0.5, num_additive_markers=5, epistatic_orde
   }
   
   if(model == "epistatic" | model == "mixed"){
+    cat("Creating epistatic markers... this might take a while...\n")
     andmarkers <- as.data.frame(matrix(nrow=nrow(Y_temp), ncol=1000))
     ormarkers <- as.data.frame(matrix(nrow=nrow(Y_temp), ncol=1000))
     
@@ -118,9 +119,16 @@ simu_phen <- function(X, Y, K, herit=0.5, num_additive_markers=5, epistatic_orde
     andmarkers <- andmarkers[, -na.omit(and_rms)]
     ormarkers <- ormarkers[, -na.omit(or_rms)]
     
-    foo <- sample(ncol(andmarkers), size=5)
-    bar <- sample(ncol(ormarkers), size=5)
-    epistatic_value <- andmarkers[,foo] + ormarkers[,bar]
+    repeat{
+      foo <- sample(ncol(andmarkers), size=5)
+      bar <- sample(ncol(ormarkers), size=5)
+      epistatic_value <- andmarkers[,foo[1]] + andmarkers[,foo[2]] + andmarkers[,foo[3]] + andmarkers[,foo[4]] + andmarkers[,foo[5]] +
+        ormarkers[,bar[1]] + ormarkers[,bar[2]] + ormarkers[,bar[3]] + ormarkers[,bar[4]] + ormarkers[,bar[5]]
+      Y <- as.data.frame(ecotype, epistatic_value)
+      h2test <- amm_gwas(Y=Y, X=X, K=K2029, run=FALSE, report=FALSE)
+      if(h2test[1] < 0.3) break
+    }
+    
     if(model == "epistatic"){
       prel_phenotype_value <- epistatic_value
     }
