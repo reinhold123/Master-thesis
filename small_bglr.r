@@ -1,4 +1,4 @@
-small_geno_pred <- function(nmarker=10000, X, Y, A){
+small_geno_pred <- function(nmarker=10000, X, Y, A, ncv=5, tst_rat=0.2){
   s <- sample(1:ncol(X), nmarker)
   Xrandom <- X[,s]
   X <- Xrandom
@@ -11,8 +11,19 @@ small_geno_pred <- function(nmarker=10000, X, Y, A){
   X <- scale(X,center=TRUE,scale=TRUE)
   G <- tcrossprod(X) / ncol(X)
   EVD <- eigen(G)
-  ETA <- list(list(K=A, model='RKHS'), list(V=EVD$vectors,d=EVD$values, model='RKHS'))
-  fmBRR <- BGLR(y=y,ETA=list(list(X=X,model='BRR')), nIter=6000, burnIn=1000,saveAt='brr_', verbose=F)
-  accuracy <- cor(fmBRR$y, fmBRR$yHat)
+  ETA <- list(list(K=A, model='RKHS'), list(V=EVD$vectors, d=EVD$values, model='RKHS'))
+  cvf <- matrix(0, nrow=length(y), ncol=as.numeric(ncv))
+  for(j in 1:ncv){ 
+    cvf[sample(1:nrow(cvf), round(nrow(cvf) * tst_rat, 0)), j] <- 1
+  }
+  yHat <- rep(NA, ncv)
+  for(i in 1:ncv){
+    tst <- which(cvf[, i] == 1)
+    yNA <- y
+    yNA[tst] <- NA
+    fm <- BGLR(y=yNA,ETA=list(list(X=X,model='BRR')), nIter=6000, burnIn=1000, saveAt='brr_', verbose=F)
+    yHat[i] <- cor(fm$yHat[tst], y[tst])
+  }
+  accuracy <- mean(yHat)
   return(accuracy)
 }
