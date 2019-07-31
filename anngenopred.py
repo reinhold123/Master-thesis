@@ -8,12 +8,18 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, GaussianNoise, Reshape
 from tensorflow.keras.layers import Flatten, LocallyConnected1D
 from keras.backend.tensorflow_backend import set_session
+from itertools import groupby
 
 
 config = tf.ConfigProto()
 # config.gpu_options.per_process_gpu_memory_fraction = 0.1
 config.gpu_options.allow_growth = True
 set_session(tf.Session(config=config))
+
+# helper function
+def split_text(s):
+    for k, g in groupby(s, str.isalpha):
+        yield ''.join(g)
 
 
 # "build network"-function
@@ -89,12 +95,16 @@ def genopred(phenocsv, genocsv, cvfcsv):
         cv_model.fit(x_train, y_train, epochs=my_epochs)
         y_hat = cv_model.predict(x_test)
         accuracy = np.corrcoef(y_hat.flatten(), np.asarray(y_test).flatten())
+        foo = os.path.basename(phenocsv)
+        mod = list(split_text(foo))[1]
+        herit = list(split_text(foo))[0]
+        result = [accuracy[0][1], mod, herit]
         print("\n===================================\nPrediction accuracy is at {}.".format(accuracy[0][1]))
         filename = "/home/s340454/master/genopredANN.csv"
         if os.path.isfile(filename):
             with open(filename, "a") as f:
                 writer = csv.writer(f)
-                writer.writerow(accuracy)
+                writer.writerow(result)
         else:
             pd.DataFrame(accuracy).to_csv(filename)
         print("\nDone\n")
