@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 import csv
 import os
-import glob
+#import glob
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, GaussianNoise, Reshape
 from tensorflow.keras.layers import Flatten, LocallyConnected1D
@@ -73,8 +73,8 @@ def genopred(phenocsv, genocsv, cvfcsv):
     for l in rms:
         y.pop(l)
         x.drop(l, inplace=True)
-    for i in range(1, 6):
-        print("Predicting cv_fold {} of {}".format(i, 5))
+    for i in range(1, 51):
+        print("Predicting cv_fold {} of {}".format(i, 50))
         y_train = []
         x_train = pd.DataFrame()
         y_test = []
@@ -110,14 +110,14 @@ def genopred(phenocsv, genocsv, cvfcsv):
         print("\nDone\n")
 
 
-my_act = "sigmoid"
+my_act = "relu"
 my_drop_rate = str('0.5')
-my_arc = str('50,30')
+my_arc = str('48')
 DG = 'D,D,D,D,D,G'
 LC = True
 my_loss = "mean_squared_error"
 my_optimizer = "Adam"
-my_epochs = 100
+my_epochs = 50
 my_initializer = 'truncated_normal'
 expected_result_dimension = 1
 
@@ -125,61 +125,63 @@ genocsv = "/storage/full-share/gp_at/filtered_genos_csv/FT10.csv"
 cvfcsv = "/storage/full-share/gp_at/cvf/FT10.csv"
 
 # pipeline for final experiment (predicting all simluated phenotypes)
-for phenocsv in glob.iglob("/home/s340454/master/sim_phenotypes/**", recursive=True):
-    if os.path.isfile(phenocsv):
-        genopred(phenocsv=phenocsv, genocsv=genocsv, cvfcsv=cvfcsv)
+#for phenocsv in glob.iglob("/home/s340454/master/sim_phenotypes/**", recursive=True):
+#    if os.path.isfile(phenocsv):
+#        genopred(phenocsv=phenocsv, genocsv=genocsv, cvfcsv=cvfcsv)
         
 # pipeline for grid search of hyperparameters
-#activations = ["relu", "sigmoid"]
-#optimizers = ["Adam"]
-#architectures =[str("50,30"), str("50,50"), str("50,30,15")]
-#dropouts = [str("0.5,0.5,0.5")]
-#phenocsv = "/storage/full-share/gp_at/new_phenos/FT10.csv"
-#x = pd.read_csv(genocsv, engine="python")
-#y = pd.read_csv(phenocsv, engine="python")
-#cvfolds = pd.read_csv(cvfcsv, engine="python")
-#y = y["phenotype_value"]
-#rms = []
-#for k in list(y.index):
-#    if np.isnan(y[k]):
-#        rms.append(k)
-#    for l in rms:
-#        y.pop(l)
-#        x.drop(l, inplace=True)
-#result = []
-#
-#for activation in activations:
-#    for optimizer in optimizers:
-#        for architecture in architectures:
-#            for dropout in dropouts:
-#                if dropout == "0.1,0.1,0.1":
-#                    foo = 0.1
-#                else:
-#                    foo = 0.5
-#                for i in range(1, 6):
-#                    print("Predicting cv fold {} of {}".format(i, 5))
-#                    y_train = []
-#                    x_train = pd.DataFrame()
-#                    y_test = []
-#                    x_test = pd.DataFrame()
-#                    for j in list(y.index):
-#                        if cvfolds["cv_{}".format(i)][j] == 1:
-#                            y_test.append(y[j])
-#                            x_test = x_test.append(x.iloc[:, j+1])
-#                        else:
-#                            y_train.append(y[j])
-#                            x_train = x_train.append(x.iloc[:, j+1])
-#                    y_train = pd.DataFrame(y_train)
-#                    y_test = pd.DataFrame(y_test)
-#                    x_train = pd.DataFrame(x_train)
-#                    x_test = pd.DataFrame(x_test)
-#                    test_model = build_network(arc=architecture, drop_rate=dropout, dg=DG, lc=LC, x_train=x_train)
-#                    test_model.compile(loss="MSE", optimizer=optimizer)
-#                    test_model.fit(x_train, y_train, epochs=100)
-#                    y_hat = test_model.predict(x_test)
-#                    accuracy = np.corrcoef(y_hat.flatten(), np.asarray(y_test).flatten())
-#                    print("\n==========================\nPrediction accuracy is at {}".format(accuracy[0][1]))
-#                    result.append({"activation": activation, "optimizer": optimizer, "architecture": architecture, "dropout":foo, "accuracy":accuracy[0][1]})
-#                    print("\nDone")
-#
-#final = pd.DataFrame.from_dict(result)
+activations = ["relu", "sigmoid"]
+optimizers = ["Adam", "SGD", "Adamax"]
+architectures =[str("50,30"), str("50,50"), str("50,30,15"), str("100"), str("63,63")]
+dropouts = [str("0.5,0.5,0.5")]
+phenocsv = "/storage/full-share/gp_at/new_phenos/FT10.csv"
+x = pd.read_csv(genocsv, engine="python")
+y = pd.read_csv(phenocsv, engine="python")
+cvfolds = pd.read_csv(cvfcsv, engine="python")
+y = y["phenotype_value"]
+rms = []
+for k in list(y.index):
+    if np.isnan(y[k]):
+        rms.append(k)
+if rms != []:
+    for l in rms:
+        y.pop(l)
+        x.drop(l, inplace=True)
+result = []
+
+for activation in activations:
+    for optimizer in optimizers:
+        for architecture in architectures:
+            for dropout in dropouts:
+                if dropout == "0.1,0.1,0.1":
+                    foo = 0.1
+                else:
+                    foo = 0.5
+                for i in range(1, 6):
+                    print("Predicting cv fold {} of {}".format(i, 5))
+                    y_train = []
+                    x_train = pd.DataFrame()
+                    y_test = []
+                    x_test = pd.DataFrame()
+                    for j in list(y.index):
+                        if cvfolds["cv_{}".format(i)][j] == 1:
+                            y_test.append(y[j])
+                            x_test = x_test.append(x.iloc[:, j+1])
+                        else:
+                            y_train.append(y[j])
+                            x_train = x_train.append(x.iloc[:, j+1])
+                    y_train = pd.DataFrame(y_train)
+                    y_test = pd.DataFrame(y_test)
+                    x_train = pd.DataFrame(x_train)
+                    x_test = pd.DataFrame(x_test)
+                    test_model = build_network(arc=architecture, drop_rate=dropout, dg=DG, lc=LC, x_train=x_train)
+                    test_model.compile(loss="MSE", optimizer=optimizer)
+                    test_model.fit(x_train, y_train, epochs=100)
+                    y_hat = test_model.predict(x_test)
+                    accuracy = np.corrcoef(y_hat.flatten(), np.asarray(y_test).flatten())
+                    print("\n==========================\nPrediction accuracy is at {}".format(accuracy[0][1]))
+                    result.append({"activation": activation, "optimizer": optimizer, "architecture": architecture, "dropout":foo, "accuracy":accuracy[0][1]})
+                    print("\nDone")
+
+final = pd.DataFrame.from_dict(result)
+final.to_csv("/home/s340454/master/grid_search_final_2.csv")

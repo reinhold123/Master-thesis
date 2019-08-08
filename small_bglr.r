@@ -1,7 +1,7 @@
-small_geno_pred <- function(nmarker=10000, X, Y, ncv=5, tst_rate=0.2){
-  s <- sample(1:ncol(X), nmarker)
-  Xrandom <- X[,s]
-  X <- Xrandom
+small_geno_pred <- function(nmarker=10000, X, Y, ncv=50, tst_rate=0.2){
+  #s <- sample(1:ncol(X), nmarker)
+  #Xrandom <- X[,s]
+  #X <- Xrandom
   y <- Y[,2]
   if(any(is.na(y))){
     rms <- which(is.na(y))
@@ -15,6 +15,7 @@ small_geno_pred <- function(nmarker=10000, X, Y, ncv=5, tst_rate=0.2){
   }
   yHat <- rep(NA, ncv)
   for(i in 1:ncv){
+    cat("predicting cv-fold", i, "of", ncv)
     tst <- which(cvf[, i] == 1)
     yNA <- y
     yNA[tst] <- NA
